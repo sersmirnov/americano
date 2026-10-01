@@ -159,7 +159,30 @@ function schedule(n){
   }
   return rounds;
 }
-var R = schedule(N);
+// Spread pairs across courts: same matches per round, but each round's matches are
+// placed on courts so nobody stays on one court and everyone visits all courts.
+// Seeded, so every phone shows the same courts.
+function assignCourts(R, n){
+  var seed = 20261003;
+  function rnd(){ seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+  var perms = [];
+  (function gen(a, used){ if (a.length===6){ perms.push(a.slice()); return; } for (var i=0;i<6;i++) if (!used[i]){ used[i]=1; a.push(i); gen(a, used); a.pop(); used[i]=0; } })([], []);
+  var cnt = [], last = [];
+  for (var t=0;t<n;t++){ cnt.push([0,0,0,0,0,0]); last.push(-1); }
+  return R.map(function(ms){
+    var best = null, bestCost = Infinity;
+    perms.forEach(function(p){
+      var c = rnd()*0.5;
+      for (var k=0;k<6;k++){ var m = ms[p[k]];
+        for (var s=0;s<2;s++){ var t = m[s]; c += (last[t]===k ? 100 : 0) + 10*cnt[t][k]*cnt[t][k]; } }
+      if (c < bestCost){ bestCost = c; best = p; }
+    });
+    var out = best.map(function(i){ return ms[i]; });
+    out.forEach(function(m,k){ m.forEach(function(t){ cnt[t][k]++; last[t]=k; }); });
+    return out;
+  });
+}
+var R = assignCourts(schedule(N), N);
 function courts(){ var c = (S.courts && S.courts.length===6) ? S.courts : ['1','2','3','4','5','6']; return c.map(function(x,i){ return String(x||'').trim() || String(i+1); }); }
 function cn(k){ return 'Court '+courts()[k]; }
 // where a pair plays in a round: {court index, side 0=A 1=B}
