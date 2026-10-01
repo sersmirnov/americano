@@ -4,7 +4,7 @@
 
 ## Запуск на Railway
 1. Залейте папку в GitHub-репозиторий и создайте в Railway сервис из этого репозитория (или `railway up` из папки).
-2. Variables: `ADMIN_PIN` = ваш PIN, `DATA_DIR` = `/data`.
+2. Variables: `ADMIN_PIN` = PIN-коды организаторов через запятую (например `1111,2222`), `DATA_DIR` = `/data`.
 3. Добавьте к сервису Volume с mount path `/data`, иначе результаты пропадут при перезапуске.
 4. Settings → Networking → Generate Domain. Эту ссылку и раздаёте игрокам.
 

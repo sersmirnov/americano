@@ -317,10 +317,11 @@ document.getElementById('btn-save').addEventListener('click', async function(){
   if (busy || !pin) return;
   busy = true; var btn = this; btn.disabled = true; setMsg('Сохраняю…');
   try {
-    var r = await fetch('/api/state', {method:'POST', headers:{'content-type':'application/json','x-pin':pin}, body: JSON.stringify(S)});
+    var r = await fetch('/api/state', {method:'POST', headers:{'content-type':'application/json','x-pin':pin}, body: JSON.stringify({base: saved, next: S})});
     if (r.status===401){ canEdit=false; pin=null; try{localStorage.removeItem('am-pin');}catch(_){} dirty=false; S=JSON.parse(JSON.stringify(saved)); render(); renderFoot(); return; }
     if (!r.ok) throw new Error();
-    saved = JSON.parse(JSON.stringify(S)); dirty = false; setMsg('Сохранено');
+    var fresh = await r.json();
+    saved = fresh; S = JSON.parse(JSON.stringify(fresh)); dirty = false; setMsg('Сохранено');
     document.getElementById('savebar').hidden = true; render();
   } catch(e){ setMsg('Не удалось сохранить. Проверьте интернет и нажмите ещё раз.'); }
   finally { busy = false; btn.disabled = false; }

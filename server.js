@@ -5,7 +5,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const PIN = String(process.env.ADMIN_PIN || '');
+// ADMIN_PIN may list several PINs separated by commas: one per organizer
+const PINS = String(process.env.ADMIN_PIN || '').split(',').map(x => x.trim()).filter(Boolean);
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const FILE = path.join(DATA_DIR, 'state.json');
 const PAGE = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
@@ -51,7 +52,7 @@ function save() {
   fs.renameSync(tmp, FILE);
 }
 function authed(req) {
-  return PIN.length > 0 && req.headers['x-pin'] === PIN;
+  return PINS.includes(String(req.headers['x-pin'] || ''));
 }
 function send(res, code, body, type = 'application/json; charset=utf-8') {
   res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' });
@@ -68,11 +69,21 @@ http.createServer((req, res) => {
     req.on('data', c => { body += c; if (body.length > 100000) req.destroy(); });
     req.on('end', () => {
       try {
-        const s = JSON.parse(body);
-        if (!valid(s)) return send(res, 400, { ok: false });
-        state = clean(s);
+        const { base, next } = JSON.parse(body);
+        if (!valid(base) || !valid(next)) return send(res, 400, { ok: false });
+        // Apply only what this organizer changed, so two organizers can enter scores at once
+        const merged = JSON.parse(JSON.stringify(state));
+        for (const f of ['title', 'sub', 'total', 'sort']) if (JSON.stringify(base[f]) !== JSON.stringify(next[f])) merged[f] = next[f];
+        next.pairs.forEach((p, i) => { if (p !== base.pairs[i]) merged.pairs[i] = p; });
+        const keys = new Set([...Object.keys(base.scores), ...Object.keys(next.scores)]);
+        for (const k of keys) {
+          if (JSON.stringify(base.scores[k]) === JSON.stringify(next.scores[k])) continue;
+          if (next.scores[k] === undefined) delete merged.scores[k]; else merged.scores[k] = next.scores[k];
+        }
+        if (!valid(merged)) return send(res, 400, { ok: false });
+        state = clean(merged);
         save();
-        send(res, 200, { ok: true });
+        send(res, 200, state);
       } catch (_) { send(res, 400, { ok: false }); }
     });
     return;
