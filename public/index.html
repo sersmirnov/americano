@@ -248,7 +248,6 @@ function render(){
   renderHead();
   var v = document.getElementById('view');
   var h = '';
-  if (!canEdit) h += '<div class="ro">Результаты обновляются автоматически, страницу перезагружать не нужно.</div>';
   h += tab==='rounds' ? renderRounds() : tab==='pairs' ? renderPairs() : renderTable();
   v.innerHTML = h;
   document.getElementById('savebar').hidden = !(canEdit && dirty);
