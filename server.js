@@ -13,18 +13,22 @@ const PAGE = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
 
 const DEFAULT = {
   v: 1,
-  title: 'Американо · суббота 3 октября',
-  sub: 'Падел · парное американо · 12 пар',
+  title: 'Americano · Saturday 3 October',
+  sub: 'Padel · team americano · 12 pairs',
   total: null,
   sort: 'points',
   courts: ['1', '2', '3', '4', '5', '6'],
-  pairs: Array.from({ length: 12 }, (_, i) => 'Пара ' + (i + 1)),
+  pairs: Array.from({ length: 12 }, (_, i) => 'Pair ' + (i + 1)),
   scores: {},
 };
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 let state = DEFAULT;
 try { state = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch (_) {}
+// Switch untouched Russian defaults to English; anything the organizers typed stays as is
+if (state.title === 'Американо · суббота 3 октября') state.title = DEFAULT.title;
+if (state.sub === 'Падел · парное американо · 12 пар') state.sub = DEFAULT.sub;
+if (Array.isArray(state.pairs)) state.pairs = state.pairs.map(p => /^Пара \d+$/.test(p) ? p.replace('Пара', 'Pair') : p);
 
 function valid(s) {
   if (!s || typeof s !== 'object') return false;
@@ -44,6 +48,7 @@ function clean(s) {
     total: Number.isInteger(s.total) && s.total > 0 && s.total < 100 ? s.total : null,
     sort: s.sort === 'wins' ? 'wins' : 'points',
     courts: Array.isArray(s.courts) && s.courts.length === 6 && s.courts.every(c => typeof c === 'string' && c.trim() && c.length <= 12) ? s.courts : ['1', '2', '3', '4', '5', '6'],
+    sideA: String(s.sideA || '').slice(0, 60),
     pairs: s.pairs,
     scores: s.scores,
   };
@@ -75,7 +80,7 @@ http.createServer((req, res) => {
         if (!valid(base) || !valid(next)) return send(res, 400, { ok: false });
         // Apply only what this organizer changed, so two organizers can enter scores at once
         const merged = JSON.parse(JSON.stringify(state));
-        for (const f of ['title', 'sub', 'total', 'sort', 'courts']) if (JSON.stringify(base[f]) !== JSON.stringify(next[f])) merged[f] = next[f];
+        for (const f of ['title', 'sub', 'total', 'sort', 'courts', 'sideA']) if (JSON.stringify(base[f]) !== JSON.stringify(next[f])) merged[f] = next[f];
         next.pairs.forEach((p, i) => { if (p !== base.pairs[i]) merged.pairs[i] = p; });
         const keys = new Set([...Object.keys(base.scores), ...Object.keys(next.scores)]);
         for (const k of keys) {
