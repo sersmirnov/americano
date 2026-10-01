@@ -17,6 +17,7 @@ const DEFAULT = {
   sub: 'Падел · парное американо · 12 пар',
   total: null,
   sort: 'points',
+  courts: ['1', '2', '3', '4', '5', '6'],
   pairs: Array.from({ length: 12 }, (_, i) => 'Пара ' + (i + 1)),
   scores: {},
 };
@@ -42,6 +43,7 @@ function clean(s) {
     sub: String(s.sub || '').slice(0, 80),
     total: Number.isInteger(s.total) && s.total > 0 && s.total < 100 ? s.total : null,
     sort: s.sort === 'wins' ? 'wins' : 'points',
+    courts: Array.isArray(s.courts) && s.courts.length === 6 && s.courts.every(c => typeof c === 'string' && c.trim() && c.length <= 12) ? s.courts : ['1', '2', '3', '4', '5', '6'],
     pairs: s.pairs,
     scores: s.scores,
   };
@@ -73,7 +75,7 @@ http.createServer((req, res) => {
         if (!valid(base) || !valid(next)) return send(res, 400, { ok: false });
         // Apply only what this organizer changed, so two organizers can enter scores at once
         const merged = JSON.parse(JSON.stringify(state));
-        for (const f of ['title', 'sub', 'total', 'sort']) if (JSON.stringify(base[f]) !== JSON.stringify(next[f])) merged[f] = next[f];
+        for (const f of ['title', 'sub', 'total', 'sort', 'courts']) if (JSON.stringify(base[f]) !== JSON.stringify(next[f])) merged[f] = next[f];
         next.pairs.forEach((p, i) => { if (p !== base.pairs[i]) merged.pairs[i] = p; });
         const keys = new Set([...Object.keys(base.scores), ...Object.keys(next.scores)]);
         for (const k of keys) {

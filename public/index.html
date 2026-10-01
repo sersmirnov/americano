@@ -78,6 +78,16 @@ input.sc{width:56px;height:42px;border:1px solid var(--line);border-radius:8px;b
 input.sc::-webkit-outer-spin-button,input.sc::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .sep{height:1px;background:var(--line)}
 .clear{align-self:flex-end;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 0;text-decoration:underline}
+.nx{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:1px}
+.sd{display:inline-block;font:600 11px var(--display);color:var(--court);border:1px solid var(--court);border-radius:4px;padding:0 4px;margin-right:6px;vertical-align:1px}
+.match .mno{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:.03em;text-transform:none;color:var(--fg)}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.rule summary{cursor:pointer;font-weight:600}
+.rule-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:12px 0 4px;text-align:center;font-size:13px}
+.rule-grid .rn{font:600 16px var(--display);background:var(--court);color:var(--court-ink);border-radius:6px;padding:6px 0}
+.rule-grid .rc{color:var(--muted);white-space:nowrap}
+.rule-grid b{color:var(--fg)}
+.rule-list{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 /* pairs & settings */
 .pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
 .pairs label{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:8px;min-width:0}
@@ -140,7 +150,7 @@ function schedule(n){
     var ms = [];
     for (var k=0;k<n/2;k++){
       var a = ids[k], b = ids[n-1-k];
-      ms.push(r%2 && k===0 ? [b,a] : [a,b]);
+      ms.push([a,b]); // court k+1: side A = a, side B = b
     }
     rounds.push(ms);
     ids = [ids[0]].concat([ids[n-1]], ids.slice(1,n-1));
@@ -148,6 +158,10 @@ function schedule(n){
   return rounds;
 }
 var R = schedule(N);
+function courts(){ var c = (S.courts && S.courts.length===6) ? S.courts : ['1','2','3','4','5','6']; return c.map(function(x,i){ return String(x||'').trim() || String(i+1); }); }
+function cn(k){ return 'Корт '+courts()[k]; }
+// where a pair plays in a round: {court index, side 0=A 1=B}
+function posIn(r, t){ for (var k=0;k<R[r].length;k++){ var m=R[r][k]; if (m[0]===t) return {k:k,side:0}; if (m[1]===t) return {k:k,side:1}; } return null; }
 function key(a,b){ return a<b ? a+'-'+b : b+'-'+a; }
 function getScore(a,b){ var s = S.scores[key(a,b)]; if (!s) return null; return a<b ? s : [s[1],s[0]]; }
 function setScore(a,b,x,y){
@@ -206,14 +220,28 @@ function renderRounds(){
   for (var r=0;r<R.length;r++) h += '<button data-round="'+r+'" class="'+(roundDone(r)?'done':'')+'" aria-pressed="'+(r===round)+'">'+(r+1)+'</button>';
   h += '</div>';
   h += '<div class="round-head"><h2>Тур '+(round+1)+' из '+R.length+'</h2>'+(S.total ? '<span class="note">Матч до суммы '+S.total+' очков</span>' : '')+'</div>';
+  var C = courts();
+  h += '<details class="rule"'+(round===0?' open':'')+'><summary>Как переходят пары после тура</summary>'
+    + '<div class="rule-grid" aria-hidden="true">'
+    + C.map(function(c,i){ return '<span class="rc">'+(i===0?'<b>А</b> стоит':'<b>А</b> '+(i<5?'→':'↓'))+'</span>'; }).join('')
+    + C.map(function(c){ return '<span class="rn">'+esc(c)+'</span>'; }).join('')
+    + C.map(function(c,i){ return '<span class="rc">'+(i===0?'<b>Б</b> ↗':'← <b>Б</b>')+'</span>'; }).join('')
+    + '</div><ul class="rule-list">'
+    + '<li>Пара на корте '+esc(C[0])+', сторона А, весь турнир стоит на месте.</li>'
+    + '<li>Остальные пары стороны А переходят на один корт дальше: '+esc(C[1])+' → '+esc(C[2])+' … '+esc(C[4])+' → '+esc(C[5])+'. С корта '+esc(C[5])+' пара А переходит на сторону Б того же корта.</li>'
+    + '<li>Пары стороны Б переходят на один корт ближе: '+esc(C[5])+' → '+esc(C[4])+' … '+esc(C[1])+' → '+esc(C[0])+'. С корта '+esc(C[0])+' пара Б переходит на сторону А корта '+esc(C[1])+'.</li>'
+    + '<li>Под каждой парой написано, куда ей идти в следующем туре.</li>'
+    + '</ul></details>';
   h += '<div class="matches">';
   R[round].forEach(function(m,k){
     var s = getScore(m[0],m[1]) || [null,null];
     var done = complete(s), wa = done && +s[0]>+s[1], wb = done && +s[1]>+s[0];
-    h += '<div class="match"><div class="mno">Матч '+(k+1)+'</div>';
+    h += '<div class="match"><div class="mno">'+esc(cn(k))+'</div>';
     [0,1].forEach(function(side){
       var won = side===0 ? wa : wb, v = s[side];
-      h += '<div class="side'+(won?' won':'')+'"><span class="nm">'+esc(nm(m[side]))+'</span>';
+      var nx = round < R.length-1 ? posIn(round+1, m[side]) : null;
+      var hint = nx ? '<span class="nx">'+(nx.k===k && nx.side===side ? 'остаётся здесь' : 'дальше: '+esc(cn(nx.k))+', '+(nx.side?'Б':'А'))+'</span>' : '';
+      h += '<div class="side'+(won?' won':'')+'"><span class="nm"><span class="sd">'+(side?'Б':'А')+'</span>'+esc(nm(m[side]))+hint+'</span>';
       if (canEdit) h += '<input class="sc" type="number" inputmode="numeric" min="0" max="99" id="s-'+key(m[0],m[1])+'-'+side+'" data-a="'+m[0]+'" data-b="'+m[1]+'" data-side="'+side+'" value="'+(v===null||v===undefined?'':v)+'" aria-label="Счёт: '+esc(nm(m[side]))+'">';
       else h += '<span class="sc'+(v===null||v===undefined||v===''?' empty':'')+'">'+(v===null||v===undefined||v===''?'–':v)+'</span>';
       h += '</div>';
@@ -238,9 +266,10 @@ function renderPairs(){
   h += '</div><h3>Турнир</h3><div class="settings">'
     + '<label>Название<input class="txt" id="set-title" data-set="title" value="'+esc(S.title||'')+'" maxlength="80"></label>'
     + '<label>Подзаголовок<input class="txt" id="set-sub" data-set="sub" value="'+esc(S.sub||'')+'" maxlength="80"></label>'
+    + '<label>Корты по порядку, через запятую<input class="txt" id="set-courts" data-set="courts" value="'+esc(courts().join(', '))+'" maxlength="80"></label>'
     + '<label>Сумма очков в матче<input class="txt" id="set-total" data-set="total" type="number" inputmode="numeric" min="1" max="99" placeholder="не задана" value="'+(S.total||'')+'"></label>'
     + '<label>Места считать<select id="set-sort" data-set="sort"><option value="points"'+(S.sort!=='wins'?' selected':'')+'>По сумме очков</option><option value="wins"'+(S.sort==='wins'?' selected':'')+'>По победам</option></select></label>'
-    + '</div><p class="note">Если задать сумму очков (например 24), то при вводе счёта одной пары второй заполнится сам: 15 → 9.</p>';
+    + '</div><p class="note">Корты указывайте в том порядке, в каком они стоят на площадке: по нему пары переходят на соседний корт. Нужно ровно 6 номеров.</p><p class="note">Если задать сумму очков (например 24), то при вводе счёта одной пары второй заполнится сам: 15 → 9.</p>';
   return h;
 }
 
@@ -270,6 +299,7 @@ document.getElementById('view').addEventListener('input', function(e){
   if (el.dataset.pair !== undefined){ S.pairs[+el.dataset.pair] = el.value; touch(); return; }
   if (el.dataset.set){
     var k = el.dataset.set;
+    if (k==='courts'){ var parts = el.value.split(',').map(function(x){ return x.trim().slice(0,12); }); if (parts.length!==6 || parts.some(function(x){ return !x; })) return; S.courts = parts; touch(); return; }
     S[k] = k==='total' ? (num(el.value)||null) : el.value;
     touch(); if (k==='sort') return; return;
   }
