@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Американо 12 пар</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
+<style id="app-style">
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+/* Layout: scoreboard header, sticky tab bar, then one working panel (standings / rounds / pairs) */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --line:#dde3ec; --fg:#14213a; --muted:#5d6b82;
+  --court:#1d5aa6; --court-ink:#ffffff; --ball:#c9d92b; --ball-ink:#1b2400;
+  --win:#1f8a52; --loss:#b4423a; --field:#f7f9fc;
+  --display:"Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1420; --surface:#151e2d; --line:#26324a; --fg:#e7ecf5; --muted:#93a1b8;
+  --court:#3b7dd8; --court-ink:#ffffff; --ball:#d3e23a; --ball-ink:#1b2400;
+  --win:#4cc483; --loss:#ee7a70; --field:#0f1725; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1420; --surface:#151e2d; --line:#26324a; --fg:#e7ecf5; --muted:#93a1b8;
+  --court:#3b7dd8; --court-ink:#ffffff; --ball:#d3e23a; --ball-ink:#1b2400;
+  --win:#4cc483; --loss:#ee7a70; --field:#0f1725; color-scheme:dark }
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
+header.hero{background:var(--court);color:var(--court-ink);margin-inline:-16px;padding:22px 16px 18px;position:relative;overflow:hidden}
+header.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:var(--ball)}
+.hero-in{max-width:828px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,6vw,40px);line-height:1.05;margin:2px 0 0;text-wrap:balance;letter-spacing:.01em}
+.progress{font-family:var(--display);font-size:15px;letter-spacing:.04em;text-align:right}
+.progress b{font-size:28px;font-weight:600}
+.bar{height:6px;background:rgba(255,255,255,.25);border-radius:3px;margin-top:6px;width:180px;max-width:100%;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ball)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;padding-block:12px 10px;border-bottom:1px solid var(--line);margin-bottom:18px}
+nav.tabs button{font:600 15px var(--body);border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--court);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:16px}
+.note{color:var(--muted);font-size:13px}
+.ro{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--muted)}
+/* standings */
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:10px 10px;text-align:right;white-space:nowrap}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th.l,td.l{text-align:left}
+td.name{white-space:normal;min-width:140px;font-weight:500}
+td.pos{font-family:var(--display);font-size:18px;color:var(--muted);width:36px;text-align:center}
+tr.top1 td.pos{color:var(--ball-ink);background:var(--ball)}
+td.pts{font-family:var(--display);font-size:20px;font-weight:600}
+.pos-diff{color:var(--win)} .neg-diff{color:var(--loss)}
+/* rounds */
+.round-pick{display:flex;flex-wrap:wrap;gap:6px}
+.round-pick button{font:600 14px var(--display);letter-spacing:.03em;min-width:44px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;position:relative}
+.round-pick button.done{border-color:var(--win)}
+.round-pick button.done::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--win)}
+.round-pick button[aria-pressed="true"]{background:var(--court);color:var(--court-ink);border-color:var(--court)}
+.round-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.round-head h2{font-family:var(--display);font-weight:600;font-size:24px;margin:0}
+.matches{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.match{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.match .mno{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.side{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}
+.side .nm{min-width:0;overflow-wrap:anywhere;font-weight:500}
+.side.won .nm{color:var(--win)}
+.side.won .sc{color:var(--win)}
+.sc{font-family:var(--display);font-size:24px;font-weight:600;min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+.sc.empty{color:var(--line)}
+input.sc{width:56px;height:42px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--fg);padding:0;-moz-appearance:textfield}
+input.sc::-webkit-outer-spin-button,input.sc::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sep{height:1px;background:var(--line)}
+.clear{align-self:flex-end;font-size:12px;border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 0;text-decoration:underline}
+/* pairs & settings */
+.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.pairs label{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:8px;min-width:0}
+.pairs .n{font-family:var(--display);color:var(--muted);text-align:right}
+input.txt,select{font:15px var(--body);height:40px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);padding:0 10px;width:100%;min-width:0;box-sizing:border-box}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+h3{font-family:var(--display);font-weight:600;font-size:19px;margin:6px 0 0;letter-spacing:.02em}
+/* save bar */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--fg);color:var(--bg);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.savebar-in{max-width:828px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.savebar button{font:600 15px var(--body);border:0;border-radius:999px;padding:10px 20px;cursor:pointer}
+.btn-save{background:var(--ball);color:var(--ball-ink)}
+.btn-undo{background:transparent;color:var(--bg);text-decoration:underline}
+.btn-undo:disabled,.btn-save:disabled{opacity:.5;cursor:default}
+.msg{font-size:14px}
+/* organizer login */
+.foot{margin-top:28px}
+.foot summary{cursor:pointer}
+.pinrow{display:flex;gap:8px;margin-top:8px;max-width:320px}
+.pinrow .btn-save{border:0;border-radius:999px;padding:0 18px;font:600 15px var(--body);cursor:pointer}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .4s ease}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="hero"><div class="hero-in">
+    <div><div class="eyebrow" id="sub">Падел · парное американо</div><h1 id="ttl">Американо</h1></div>
+    <div class="progress" id="prog"></div>
+  </div></header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-table" data-tab="table" aria-selected="true">Таблица</button>
+    <button role="tab" id="tab-rounds" data-tab="rounds" aria-selected="false">Туры</button>
+    <button role="tab" id="tab-pairs" data-tab="pairs" aria-selected="false">Пары</button>
+  </nav>
+  <main id="view" class="panel"></main>
+  <footer id="foot" class="foot"></footer>
+</div>
+<div class="savebar" id="savebar" hidden><div class="savebar-in">
+  <span class="msg" id="savemsg">Есть несохранённые изменения</span>
+  <span><button class="btn-undo" id="btn-undo">Отменить</button> <button class="btn-save" id="btn-save">Сохранить</button></span>
+</div></div>
+
+<script type="application/json" id="state">{"v":1,"title":"Американо · суббота 3 октября","sub":"Падел · парное американо · 12 пар","total":null,"sort":"points","pairs":["Пара 1","Пара 2","Пара 3","Пара 4","Пара 5","Пара 6","Пара 7","Пара 8","Пара 9","Пара 10","Пара 11","Пара 12"],"scores":{}}</script>
+<script id="app-js">
+(function(){
+var saved = JSON.parse(document.getElementById('state').textContent);
+var S = JSON.parse(JSON.stringify(saved));
+var N = S.pairs.length; // 12
+var canEdit = false, art = null, dirty = false, busy = false;
+var tab = 'table', round = 0;
+try { var t = sessionStorage.getItem('am-tab'); if (t) tab = t; var r = sessionStorage.getItem('am-round'); if (r) round = +r; } catch(e){}
+
+// Round-robin schedule (circle method): 11 rounds x 6 matches, every pair meets every other once
+function schedule(n){
+  var ids = []; for (var i=0;i<n;i++) ids.push(i);
+  var rounds = [];
+  for (var r=0;r<n-1;r++){
+    var ms = [];
+    for (var k=0;k<n/2;k++){
+      var a = ids[k], b = ids[n-1-k];
+      ms.push(r%2 && k===0 ? [b,a] : [a,b]);
+    }
+    rounds.push(ms);
+    ids = [ids[0]].concat([ids[n-1]], ids.slice(1,n-1));
+  }
+  return rounds;
+}
+var R = schedule(N);
+function key(a,b){ return a<b ? a+'-'+b : b+'-'+a; }
+function getScore(a,b){ var s = S.scores[key(a,b)]; if (!s) return null; return a<b ? s : [s[1],s[0]]; }
+function setScore(a,b,x,y){
+  var k = key(a,b);
+  if (x===null && y===null){ delete S.scores[k]; return; }
+  S.scores[k] = a<b ? [x,y] : [y,x];
+}
+function complete(s){ return s && s[0]!==null && s[1]!==null && s[0]!=='' && s[1]!==''; }
+function esc(t){ return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function nm(i){ return S.pairs[i] && S.pairs[i].trim() ? S.pairs[i] : 'Пара '+(i+1); }
+
+function standings(){
+  var rows = S.pairs.map(function(_,i){ return {i:i,p:0,w:0,d:0,l:0,pf:0,pa:0}; });
+  R.forEach(function(ms){ ms.forEach(function(m){
+    var s = getScore(m[0],m[1]); if (!complete(s)) return;
+    var A = rows[m[0]], B = rows[m[1]], x=+s[0], y=+s[1];
+    A.p++; B.p++; A.pf+=x; A.pa+=y; B.pf+=y; B.pa+=x;
+    if (x>y){A.w++;B.l++;} else if (y>x){B.w++;A.l++;} else {A.d++;B.d++;}
+  }); });
+  rows.forEach(function(r){ r.diff = r.pf - r.pa; });
+  rows.sort(S.sort==='wins'
+    ? function(a,b){ return b.w-a.w || b.diff-a.diff || b.pf-a.pf || a.i-b.i; }
+    : function(a,b){ return b.pf-a.pf || b.w-a.w || b.diff-a.diff || a.i-b.i; });
+  return rows;
+}
+function playedCount(){ var c=0; R.forEach(function(ms){ ms.forEach(function(m){ if (complete(getScore(m[0],m[1]))) c++; }); }); return c; }
+function roundDone(r){ return R[r].every(function(m){ return complete(getScore(m[0],m[1])); }); }
+
+function renderHead(){
+  document.getElementById('ttl').textContent = S.title || 'Американо';
+  document.getElementById('sub').textContent = S.sub || '';
+  var total = R.length*R[0].length, c = playedCount();
+  document.getElementById('prog').innerHTML = '<div><b>'+c+'</b> / '+total+' матчей</div><div class="bar"><i style="width:'+(c/total*100)+'%"></i></div>';
+  document.querySelectorAll('nav.tabs button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.tab===tab ? 'true':'false'); });
+}
+
+function renderTable(){
+  var rows = standings();
+  var h = '';
+  if (!canEdit) h += '';
+  h += '<div class="tbl-wrap"><table><thead><tr><th>#</th><th class="l">Пара</th><th title="Сыграно матчей">И</th><th title="Победы">В</th><th title="Ничьи">Н</th><th title="Поражения">П</th><th title="Очки выиграно">Забито</th><th title="Очки проиграно">Пропущ.</th><th title="Разница">±</th></tr></thead><tbody>';
+  rows.forEach(function(r,idx){
+    var ptsCol = S.sort==='wins' ? 'w' : 'pf';
+    h += '<tr class="'+(idx===0 && r.p>0 ? 'top1':'')+'"><td class="pos">'+(idx+1)+'</td><td class="l name">'+esc(nm(r.i))+'</td><td>'+r.p+'</td>'
+      +'<td'+(ptsCol==='w'?' class="pts"':'')+'>'+r.w+'</td><td>'+r.d+'</td><td>'+r.l+'</td>'
+      +'<td'+(ptsCol==='pf'?' class="pts"':'')+'>'+r.pf+'</td><td>'+r.pa+'</td>'
+      +'<td class="'+(r.diff>0?'pos-diff':r.diff<0?'neg-diff':'')+'">'+(r.diff>0?'+':'')+r.diff+'</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  h += '<p class="note">'+(S.sort==='wins' ? 'Места: по победам, затем по разнице очков, затем по забитым.' : 'Места: по сумме набранных очков (классика американо), затем по победам и разнице.')+' Каждая пара играет 11 матчей, по одному с каждой другой парой.</p>';
+  return h;
+}
+
+function renderRounds(){
+  var h = '<div class="round-pick" role="group" aria-label="Тур">';
+  for (var r=0;r<R.length;r++) h += '<button data-round="'+r+'" class="'+(roundDone(r)?'done':'')+'" aria-pressed="'+(r===round)+'">'+(r+1)+'</button>';
+  h += '</div>';
+  h += '<div class="round-head"><h2>Тур '+(round+1)+' из '+R.length+'</h2>'+(S.total ? '<span class="note">Матч до суммы '+S.total+' очков</span>' : '')+'</div>';
+  h += '<div class="matches">';
+  R[round].forEach(function(m,k){
+    var s = getScore(m[0],m[1]) || [null,null];
+    var done = complete(s), wa = done && +s[0]>+s[1], wb = done && +s[1]>+s[0];
+    h += '<div class="match"><div class="mno">Матч '+(k+1)+'</div>';
+    [0,1].forEach(function(side){
+      var won = side===0 ? wa : wb, v = s[side];
+      h += '<div class="side'+(won?' won':'')+'"><span class="nm">'+esc(nm(m[side]))+'</span>';
+      if (canEdit) h += '<input class="sc" type="number" inputmode="numeric" min="0" max="99" id="s-'+key(m[0],m[1])+'-'+side+'" data-a="'+m[0]+'" data-b="'+m[1]+'" data-side="'+side+'" value="'+(v===null||v===undefined?'':v)+'" aria-label="Счёт: '+esc(nm(m[side]))+'">';
+      else h += '<span class="sc'+(v===null||v===undefined||v===''?' empty':'')+'">'+(v===null||v===undefined||v===''?'–':v)+'</span>';
+      h += '</div>';
+      if (side===0) h += '<div class="sep"></div>';
+    });
+    if (canEdit && (s[0]!==null || s[1]!==null)) h += '<button class="clear" data-clear="'+m[0]+'-'+m[1]+'">Очистить</button>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
+function renderPairs(){
+  var h = '';
+  if (!canEdit){
+    h += '<div class="pairs">';
+    S.pairs.forEach(function(_,i){ h += '<label><span class="n">'+(i+1)+'</span><span>'+esc(nm(i))+'</span></label>'; });
+    return h + '</div>';
+  }
+  h += '<h3>Пары</h3><p class="note">Впишите состав каждой пары, например «Сергей / Алексей». Порядок пар задаёт расписание, поэтому меняйте только имена.</p><div class="pairs">';
+  S.pairs.forEach(function(p,i){ h += '<label><span class="n">'+(i+1)+'</span><input class="txt" id="pair-'+i+'" data-pair="'+i+'" value="'+esc(p)+'" maxlength="60"></label>'; });
+  h += '</div><h3>Турнир</h3><div class="settings">'
+    + '<label>Название<input class="txt" id="set-title" data-set="title" value="'+esc(S.title||'')+'" maxlength="80"></label>'
+    + '<label>Подзаголовок<input class="txt" id="set-sub" data-set="sub" value="'+esc(S.sub||'')+'" maxlength="80"></label>'
+    + '<label>Сумма очков в матче<input class="txt" id="set-total" data-set="total" type="number" inputmode="numeric" min="1" max="99" placeholder="не задана" value="'+(S.total||'')+'"></label>'
+    + '<label>Места считать<select id="set-sort" data-set="sort"><option value="points"'+(S.sort!=='wins'?' selected':'')+'>По сумме очков</option><option value="wins"'+(S.sort==='wins'?' selected':'')+'>По победам</option></select></label>'
+    + '</div><p class="note">Если задать сумму очков (например 24), то при вводе счёта одной пары второй заполнится сам: 15 → 9.</p>';
+  return h;
+}
+
+function render(){
+  renderHead();
+  var v = document.getElementById('view');
+  var h = '';
+  if (!canEdit) h += '<div class="ro">Результаты обновляются автоматически, страницу перезагружать не нужно.</div>';
+  h += tab==='rounds' ? renderRounds() : tab==='pairs' ? renderPairs() : renderTable();
+  v.innerHTML = h;
+  document.getElementById('savebar').hidden = !(canEdit && dirty);
+}
+function touch(){ dirty = JSON.stringify(S)!==JSON.stringify(saved); document.getElementById('savebar').hidden = !(canEdit && dirty); document.getElementById('savemsg').textContent = 'Есть несохранённые изменения'; renderHead(); }
+
+document.querySelector('nav.tabs').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-tab]'); if (!b) return;
+  tab = b.dataset.tab; try{ sessionStorage.setItem('am-tab', tab); }catch(_){} render();
+});
+document.getElementById('view').addEventListener('click', function(e){
+  var b = e.target.closest('[data-round]');
+  if (b){ round = +b.dataset.round; try{ sessionStorage.setItem('am-round', round); }catch(_){} render(); return; }
+  var c = e.target.closest('[data-clear]');
+  if (c){ var p = c.dataset.clear.split('-'); setScore(+p[0],+p[1],null,null); touch(); render(); }
+});
+function num(v){ if (v===''||v===null) return null; var n = Math.max(0, Math.min(99, parseInt(v,10))); return isNaN(n) ? null : n; }
+document.getElementById('view').addEventListener('input', function(e){
+  var el = e.target;
+  if (el.dataset.pair !== undefined){ S.pairs[+el.dataset.pair] = el.value; touch(); return; }
+  if (el.dataset.set){
+    var k = el.dataset.set;
+    S[k] = k==='total' ? (num(el.value)||null) : el.value;
+    touch(); if (k==='sort') return; return;
+  }
+  if (el.dataset.side !== undefined){
+    var a = +el.dataset.a, b = +el.dataset.b, side = +el.dataset.side;
+    var s = getScore(a,b) || [null,null];
+    s = s.slice(); s[side] = num(el.value);
+    var other = 1-side, oEl = document.getElementById('s-'+key(a,b)+'-'+other);
+    if (S.total && s[side]!==null && s[side]<=S.total && (oEl.value==='' || oEl.dataset.auto==='1')){
+      s[other] = S.total - s[side]; oEl.value = s[other]; oEl.dataset.auto = '1';
+    }
+    el.dataset.auto = '';
+    setScore(a,b,s[0],s[1]); touch();
+  }
+});
+document.getElementById('view').addEventListener('change', function(e){
+  if (e.target.dataset.set==='sort'){ S.sort = e.target.value; touch(); }
+  if (e.target.dataset.side !== undefined) render();
+});
+document.getElementById('btn-undo').addEventListener('click', function(){
+  S = JSON.parse(JSON.stringify(saved)); dirty=false; render();
+});
+
+
+var pin = null; try { pin = localStorage.getItem('am-pin'); } catch(_){}
+function setMsg(t){ document.getElementById('savemsg').textContent = t; }
+async function load(){
+  try {
+    var r = await fetch('/api/state', {cache:'no-store'});
+    if (!r.ok) return;
+    var d = await r.json();
+    if (dirty) return;
+    if (JSON.stringify(d)===JSON.stringify(saved)) return;
+    saved = d; S = JSON.parse(JSON.stringify(d));
+    var a = document.activeElement; if (a && a.closest && a.closest('#view') && a.tagName==='INPUT') return;
+    render();
+  } catch(e){}
+}
+async function login(p){
+  var r = await fetch('/api/login', {method:'POST', headers:{'x-pin':p}});
+  return r.ok;
+}
+document.getElementById('btn-save').addEventListener('click', async function(){
+  if (busy || !pin) return;
+  busy = true; var btn = this; btn.disabled = true; setMsg('Сохраняю…');
+  try {
+    var r = await fetch('/api/state', {method:'POST', headers:{'content-type':'application/json','x-pin':pin}, body: JSON.stringify(S)});
+    if (r.status===401){ canEdit=false; pin=null; try{localStorage.removeItem('am-pin');}catch(_){} dirty=false; S=JSON.parse(JSON.stringify(saved)); render(); renderFoot(); return; }
+    if (!r.ok) throw new Error();
+    saved = JSON.parse(JSON.stringify(S)); dirty = false; setMsg('Сохранено');
+    document.getElementById('savebar').hidden = true; render();
+  } catch(e){ setMsg('Не удалось сохранить. Проверьте интернет и нажмите ещё раз.'); }
+  finally { busy = false; btn.disabled = false; }
+});
+function renderFoot(){
+  var f = document.getElementById('foot');
+  if (canEdit){ f.innerHTML = '<button class="clear" id="logout">Выйти из режима организатора</button>'; return; }
+  f.innerHTML = '<details><summary class="note">Я организатор</summary><form id="pinform" class="pinrow"><input class="txt" id="pin-input" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN-код" aria-label="PIN-код"><button class="btn-save" type="submit">Войти</button></form><p class="note" id="pinerr"></p></details>';
+}
+document.getElementById('foot').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var p = document.getElementById('pin-input').value.trim(); if (!p) return;
+  if (await login(p)){ pin=p; try{localStorage.setItem('am-pin',p);}catch(_){} canEdit=true; render(); renderFoot(); }
+  else document.getElementById('pinerr').textContent = 'Неверный PIN.';
+});
+document.getElementById('foot').addEventListener('click', function(e){
+  if (e.target.id==='logout'){ pin=null; try{localStorage.removeItem('am-pin');}catch(_){} canEdit=false; dirty=false; S=JSON.parse(JSON.stringify(saved)); render(); renderFoot(); }
+});
+
+render(); renderFoot(); load();
+setInterval(load, 15000);
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) load(); });
+if (pin) login(pin).then(function(ok){ if (ok){ canEdit=true; render(); renderFoot(); } else { pin=null; try{localStorage.removeItem('am-pin');}catch(_){} } });
+})();
+</script>
+</body>
+</html>
