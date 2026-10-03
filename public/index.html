@@ -207,9 +207,11 @@ function standings(){
     if (x>y){A.w++;B.l++;} else if (y>x){B.w++;A.l++;} else {A.d++;B.d++;}
   }); });
   rows.forEach(function(r){ r.diff = r.pf - r.pa; });
+  // Head-to-head: if two pairs are level on points and W-T-L, the winner of their match ranks higher
+  function h2h(a,b){ var s = getScore(a.i,b.i); if (!complete(s)) return 0; return (+s[1]) - (+s[0]); }
   rows.sort(S.sort==='wins'
-    ? function(a,b){ return b.w-a.w || b.pf-a.pf || b.diff-a.diff || a.i-b.i; }
-    : function(a,b){ return b.pf-a.pf || b.w-a.w || b.diff-a.diff || a.i-b.i; });
+    ? function(a,b){ return b.w-a.w || b.pf-a.pf || b.d-a.d || h2h(a,b) || b.diff-a.diff || a.i-b.i; }
+    : function(a,b){ return b.pf-a.pf || b.w-a.w || b.d-a.d || h2h(a,b) || b.diff-a.diff || a.i-b.i; });
   return rows;
 }
 function playedCount(){ var c=0; R.forEach(function(ms){ ms.forEach(function(m){ if (complete(getScore(m[0],m[1]))) c++; }); }); return c; }
@@ -232,7 +234,7 @@ function renderTable(){
     h += '<div class="brow"><span class="bpos'+medal+'">'+(idx+1)+'</span><span class="bname">'+esc(nm(r.i))+'</span><span class="bp">'+r.pf+'</span><span class="bw">'+r.w+'-'+r.d+'-'+r.l+'</span></div>';
   });
   h += '</div>';
-  h += '<ul class="legend"><li>P: Points. The total number of points won.</li><li>W-T-L: Wins, ties and losses.</li>'+(S.sort==='wins' ? '<li>Ranked by wins, then by points.</li>' : '')+'</ul>';
+  h += '<ul class="legend"><li>P: Points. The total number of points won.</li><li>W-T-L: Wins, ties and losses.</li>'+(S.sort==='wins' ? '<li>Ranked by wins, then by points.</li>' : '<li>Ranked by points, then by wins.</li>')+'<li>If two pairs have the same points and the same W-T-L, the head-to-head result decides: the pair that won their match ranks higher.</li></ul>';
   return h;
 }
 
